@@ -170,17 +170,48 @@ app.delete("/delete/:email", (req, res) => {
 
 // Put
 
+// app.put("/delete/:id", (req, res) => {
+//   const id = req.params.id;
+//   const q =
+//     "UPDATE user SET `phone_no` = ?, `pincode`=?, `email_address`=? WHERE id =?";
+
+//   const values = [req.body.phone, req.body.pincode, req.body.email];
+
+//   db.query(q, [...values, id], (err, data) => {
+//     if (err) return res.json(err);
+
+//     return res.json("User Updated successfully");
+//   });
+// });
+
 app.put("/delete/:id", (req, res) => {
   const id = req.params.id;
-  const q =
-    "UPDATE user SET `phone_no` = ?, `pincode`=?, `email_address`=? WHERE id =?";
+  const qCheckId = "SELECT COUNT(*) AS count FROM user WHERE id = ?";
+  const qUpdate =
+    "UPDATE user SET `phone_no` = ?, `pincode` = ?, `email_address` = ? WHERE id = ?";
 
   const values = [req.body.phone, req.body.pincode, req.body.email];
 
-  db.query(q, [...values, id], (err, data) => {
-    if (err) return res.json(err);
+  // Check if the user with the provided id exists
+  db.query(qCheckId, [id], (checkErr, checkData) => {
+    if (checkErr) {
+      return res.status(500).json(checkErr);
+    }
 
-    return res.json("User Updated successfully");
+    const userExists = checkData[0].count > 0;
+
+    if (!userExists) {
+      return res.status(404).json("User not found");
+    }
+
+    // Update the user if found
+    db.query(qUpdate, [...values, id], (updateErr, updateData) => {
+      if (updateErr) {
+        return res.status(500).json(updateErr);
+      }
+
+      return res.json("User updated successfully");
+    });
   });
 });
 
